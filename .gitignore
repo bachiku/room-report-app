@@ -1,0 +1,26 @@
+# Python virtual environments
+venv/
+backend/venv/
+
+# Bytecode and cache
+__pycache__/
+*.py[cod]
+*.so
+
+# Uploaded or generated files
+uploads/
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Credentials (never commit!)
+creds.json
+
+# Node modules (if using npm)
+node_modules/
+frontend/node_modules/
+
+# Build output
+frontend/build/
