@@ -16,6 +16,7 @@ uploads/
 Thumbs.db
 
 # Credentials (never commit!)
+backend/creds.json
 creds.json
 
 # Node modules (if using npm)
