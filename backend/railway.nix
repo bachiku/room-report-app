@@ -1,4 +1,5 @@
 { pkgs }:
+
 pkgs.mkShell {
   buildInputs = [
     pkgs.python312
@@ -8,5 +9,7 @@ pkgs.mkShell {
 
     pkgs.opencv
     pkgs.libGL
+
+    pkgs.tesseract
   ];
 }
