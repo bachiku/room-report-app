@@ -4,11 +4,9 @@ import numpy as np
 import shutil
 from PIL import Image
 
-tesseract_path = shutil.which("tesseract")
-if tesseract_path:
-    pytesseract.pytesseract.tesseract_cmd = tesseract_path
-else:
-    raise EnvironmentError("❌ Tesseract not found in PATH. Make sure railway.nix includes pkgs.tesseract.")
+
+# ✅ Set tesseract path explicitly (based on Railway nix profile)
+pytesseract.pytesseract.tesseract_cmd = "/nix/var/nix/profiles/default/bin/tesseract"
 
 def extract_table_data(image_path):
     # Load image
