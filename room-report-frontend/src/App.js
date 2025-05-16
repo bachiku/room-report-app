@@ -25,7 +25,7 @@ function App() {
   setStatus('Uploading and processing...');
 
   try {
-    const response = await fetch('http://192.168.88.26:5000/upload', {
+    const response = await fetch('http://room-report-app-production.up.railway.app/upload', {
       method: 'POST',
       body: formData,
     });
