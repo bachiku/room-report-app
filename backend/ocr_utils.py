@@ -1,48 +1,45 @@
 import cv2
 import pytesseract
 import numpy as np
-import re
 import shutil
+from PIL import Image
 
-# ✅ Ensure tesseract binary is available
+# Check if tesseract exists in the expected path
 if not shutil.which("tesseract"):
-    raise EnvironmentError("❌ Tesseract is not installed or not in PATH. Make sure railway.nix includes pkgs.tesseract.")
+    raise EnvironmentError("❌ Tesseract is not in PATH — check railway.nix or PATH settings.")
+
 
 def extract_table_data(image_path):
+    # Load image
     image = cv2.imread(image_path)
 
-    # Convert to grayscale and apply threshold
+    # Convert to grayscale and apply threshold for better OCR
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    _, binary = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY_INV)
+    _, thresh = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY_INV)
 
-    # Extract name region (left) and lodging region (right)
-    h, w = binary.shape
-    name_col = binary[50:h, 0:int(w * 0.6)]
-    lodging_col = binary[50:h, int(w * 0.8):w]
+    # Define crop regions (adjust based on image width)
+    h, w = image.shape[:2]
+    
+    # Approximate column positions (tweak if needed)
+    name_col = image[0:h, 0:int(w * 0.6)]
+    lodging_col = image[0:h, int(w * 0.82):w]
 
-    # OCR config
-    config = r'--oem 3 --psm 6'
-    name_text = pytesseract.image_to_string(name_col, config=config)
-    lodging_text = pytesseract.image_to_string(lodging_col, config=config)
+    # OCR both columns
+    name_text = pytesseract.image_to_string(name_col, config='--psm 6')
+    lodging_text = pytesseract.image_to_string(lodging_col, config='--psm 6')
 
-    # Split and clean rows
-    names = name_text.split("\n")
-    lodgings = lodging_text.split("\n")
+    # Split lines
+    name_lines = name_text.strip().split('\n')
+    lodging_lines = lodging_text.strip().split('\n')
 
-    data = []
-    for name, lodging in zip(names, lodgings):
-        name = name.strip()
-        lodging = lodging.strip()
+    # Clean lines
+    name_lines = [line.strip().strip(',') for line in name_lines if line.strip()]
+    lodging_lines = [line.strip().replace(' ', '').replace('O', '0') for line in lodging_lines if line.strip()]
 
-        if name and lodging:
-            # Clean name (before first comma)
-            if ',' in name:
-                name = name.split(',')[0].strip()
-            name = name.upper()
+    # Pair and filter valid rows (only numeric Lodging values)
+    rows = []
+    for name, lodging in zip(name_lines, lodging_lines):
+        if any(char.isdigit() for char in lodging):
+            rows.append([name, lodging])
 
-            # Clean lodging value
-            lodging = lodging.replace(",", "")
-            if lodging.isdigit():
-                data.append((name, int(lodging)))
-
-    return data
+    return rows
