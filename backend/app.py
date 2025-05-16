@@ -4,6 +4,11 @@ import os
 from ocr_utils import extract_table_data
 from google_sheets import send_to_google_sheet
 
+# Create creds.json file from environment variable
+if "CREDS_JSON" in os.environ:
+    with open("creds.json", "w") as f:
+        f.write(os.environ["CREDS_JSON"])
+
 app = Flask(__name__)
 CORS(app)
 UPLOAD_FOLDER = 'uploads'
