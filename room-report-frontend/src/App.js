@@ -25,7 +25,7 @@ function App() {
   setStatus('Uploading and processing...');
 
   try {
-    const response = await fetch('http://room-report-app-production.up.railway.app/upload', {
+    const response = await fetch('https://room-report-app-production.up.railway.app/upload', {
       method: 'POST',
       body: formData,
     });
