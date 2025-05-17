@@ -9,6 +9,10 @@ if "CREDS_JSON" in os.environ:
     with open("creds.json", "w") as f:
         f.write(os.environ["CREDS_JSON"])
 else:
+    print("🔍 All environment variables:")
+    for k in os.environ:
+        print(f"  {k} = {os.environ[k][:40]}...")  # show first 40 chars if long
+
     raise EnvironmentError("❌ CREDS_JSON environment variable not found in Railway.")
 
 app = Flask(__name__)
