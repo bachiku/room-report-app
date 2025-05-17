@@ -6,7 +6,7 @@ from PIL import Image
 
 
 # ✅ Set tesseract path explicitly (based on Railway nix profile)
-pytesseract.pytesseract.tesseract_cmd = "/nix/var/nix/profiles/default/bin/tesseract"
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 def extract_table_data(image_path):
     # Load image
