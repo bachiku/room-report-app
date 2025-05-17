@@ -1,9 +1,42 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import os
 import subprocess
+from ocr_utils import extract_table_data
+from google_sheets import send_to_google_sheet
 
-print("RAILWAY ENV PATH:", os.environ.get("PATH"))
+# Attempt to install tesseract at runtime (Debian-based)
 try:
-    path = subprocess.run(["which", "tesseract"], stdout=subprocess.PIPE).stdout.decode().strip()
-    print("FOUND TESSERACT AT:", path)
+    subprocess.run(["apt-get", "update"], check=True)
+    subprocess.run(["apt-get", "install", "-y", "tesseract-ocr"], check=True)
 except Exception as e:
-    print("❌ Tesseract not found:", str(e))
+    print("❌ Failed to install Tesseract at runtime:", str(e))
+
+# Create creds.json file from environment variable
+if "CREDS_JSON" in os.environ:
+    with open("creds.json", "w") as f:
+        f.write(os.environ["CREDS_JSON"])
+
+app = Flask(__name__)
+CORS(app)
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@app.route('/upload', methods=['POST'])
+def upload_image():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+
+    file = request.files['file']
+    file_path = os.path.join('uploads', file.filename)
+    file.save(file_path)
+
+    try:
+        rows = extract_table_data(file_path)
+        send_to_google_sheet(rows)
+        return jsonify({'status': 'success', 'rows_sent': len(rows)})  # ✅ Return JSON!
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
