@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+*.env
+venv/
+.env.*
+.git/
+.gitignore
+*.log
+creds.json
+room-report-frontend/
