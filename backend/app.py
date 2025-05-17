@@ -1,21 +1,15 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
-import subprocess
 from ocr_utils import extract_table_data
 from google_sheets import send_to_google_sheet
 
-# Attempt to install tesseract at runtime (Debian-based)
-try:
-    subprocess.run(["apt-get", "update"], check=True)
-    subprocess.run(["apt-get", "install", "-y", "tesseract-ocr"], check=True)
-except Exception as e:
-    print("❌ Failed to install Tesseract at runtime:", str(e))
-
-# Create creds.json file from environment variable
+# ✅ Create creds.json file from environment variable
 if "CREDS_JSON" in os.environ:
     with open("creds.json", "w") as f:
         f.write(os.environ["CREDS_JSON"])
+else:
+    raise EnvironmentError("❌ CREDS_JSON environment variable not found in Railway.")
 
 app = Flask(__name__)
 CORS(app)
@@ -28,13 +22,13 @@ def upload_image():
         return jsonify({'error': 'No file uploaded'}), 400
 
     file = request.files['file']
-    file_path = os.path.join('uploads', file.filename)
+    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(file_path)
 
     try:
         rows = extract_table_data(file_path)
         send_to_google_sheet(rows)
-        return jsonify({'status': 'success', 'rows_sent': len(rows)})  # ✅ Return JSON!
+        return jsonify({'status': 'success', 'rows_sent': len(rows)})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
