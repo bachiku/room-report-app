@@ -1,66 +1,81 @@
-import React, { useState } from 'react';
-import './App.css';
+import React, { useState, useEffect } from 'react';
 
 function App() {
   const [file, setFile] = useState(null);
-  const [status, setStatus] = useState('');
   const [previewUrl, setPreviewUrl] = useState('');
+  const [status, setStatus] = useState('');
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    setFile(selectedFile);
-    setPreviewUrl(URL.createObjectURL(selectedFile));
-    setStatus('');
-  };
+  // ✅ Handle paste event
+  useEffect(() => {
+    const handlePaste = (event) => {
+      const items = event.clipboardData.items;
+      for (const item of items) {
+        if (item.type.indexOf('image') !== -1) {
+          const blob = item.getAsFile();
+          const newFile = new File([blob], 'pasted-image.png', { type: blob.type });
+          setFile(newFile);
+          setPreviewUrl(URL.createObjectURL(newFile));
+          setStatus('✅ Image pasted and ready!');
+          break;
+        }
+      }
+    };
 
- const handleSubmit = async () => {
-  if (!file) {
-    setStatus('Please select a file first.');
-    return;
-  }
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, []);
 
-  const formData = new FormData();
-  formData.append('file', file);
-
-  setStatus('Uploading and processing...');
-
-  try {
-    const response = await fetch('https://room-report-app-production.up.railway.app/upload', {
-      method: 'POST',
-      body: formData,
-    });
-
-    const contentType = response.headers.get('content-type');
-
-    if (!contentType || !contentType.includes('application/json')) {
-      const text = await response.text();
-      setStatus(`❌ Invalid JSON response: ${text}`);
+  const handleSubmit = async () => {
+    if (!file) {
+      setStatus('❌ No image selected or pasted');
       return;
     }
 
-    const result = await response.json();
+    const formData = new FormData();
+    formData.append('file', file);
 
-    if (response.ok) {
-      setStatus(`✅ Success! Rows sent: ${result.rows_sent}`);
-    } else {
-      setStatus(`❌ Error: ${result.error}`);
+    setStatus('⏳ Uploading...');
+
+    try {
+      const response = await fetch('https://room-report-app-production.up.railway.app/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const result = await response.json();
+      if (response.ok) {
+        setStatus(`✅ Success! Rows sent: ${result.rows_sent}`);
+      } else {
+        setStatus(`❌ Error: ${result.error}`);
+      }
+    } catch (err) {
+      setStatus(`❌ Network or server error: ${err.message}`);
     }
-
-  } catch (err) {
-    setStatus(`❌ Network or server error: ${err.message}`);
-  }
-};
-
+  };
 
   return (
     <div className="App">
-      <h1>Room Report Uploader</h1>
+      <h2>📋 Paste or Upload Room Report Image</h2>
 
-      <input type="file" accept="image/*" onChange={handleFileChange} />
-      {previewUrl && <img src={previewUrl} alt="Preview" style={{ width: '400px', margin: '20px 0' }} />}
-      
-      <br />
-      <button onClick={handleSubmit}>Upload & Send to Google Sheet</button>
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => {
+          const selectedFile = e.target.files[0];
+          setFile(selectedFile);
+          setPreviewUrl(URL.createObjectURL(selectedFile));
+          setStatus('');
+        }}
+      />
+
+      <div style={{ marginTop: '20px' }}>
+        {previewUrl && <img src={previewUrl} alt="preview" style={{ width: '400px' }} />}
+      </div>
+
+      <p><em>Tip: You can paste a screenshot (Ctrl+V) directly into this page!</em></p>
+
+      <button onClick={handleSubmit} style={{ marginTop: '10px' }}>
+        Upload & Send to Google Sheet
+      </button>
 
       <p>{status}</p>
     </div>
